@@ -1,0 +1,22 @@
+{
+  "name": "restaurant-backend",
+  "version": "1.0.0",
+  "description": "backend for restaurant-project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "author": "Jussi Kalliomäki",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^2.13.1",
+    "dotenv": "^8.2.0",
+    "graphql": "^15.0.0",
+    "mongoose": "^5.9.15",
+    "nodejs": "0.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
