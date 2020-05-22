@@ -1,6 +1,7 @@
 const {
   ApolloServer,
   gql,
+  AuthenticationError,
   } = require('apollo-server')
 
 const mongoose = require('mongoose')
@@ -11,6 +12,7 @@ const User = require('./models/User')
 const config = require('./utils/config')
 const logger = require('./utils/logger')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 mongoose.set('useFindAndModify', false)
 
@@ -124,7 +126,27 @@ const resolvers = {
       return newUser.save()
     },
 
-    
+    login: async (root, args) => {
+      const user = await User.findOne({username: args.username})
+
+      const passwordCorrect = user === null 
+      ? false
+      : await bcrypt.compare(args.password, user.passwordHash)
+
+      if (passwordCorrect){
+        logger.info(`${user.username} logged in`)
+        const userToLog = {
+          username: user.username,
+          id: user._id
+        }
+        const token = await jwt.sign(userToLog, config.JWT_SECRET)
+        return {value: token}
+
+      } else {
+        throw new AuthenticationError('invalid credentials')
+      }
+      
+    }
   }
 }
 
