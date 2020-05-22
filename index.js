@@ -7,8 +7,10 @@ const mongoose = require('mongoose')
 const _ = require('lodash')
 
 const Food = require('./models/Food')
+const User = require('./models/User')
 const config = require('./utils/config')
 const logger = require('./utils/logger')
+const bcrypt = require('bcrypt')
 
 mongoose.set('useFindAndModify', false)
 
@@ -25,21 +27,34 @@ mongoose.connect(config.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology:
 const typeDefs = gql`
   type Food {
     name: String!
+    price: Float!
     category: String!
     diet: [String]
     ingredients: [String]
     ratings: [Int]
   }
 
+  type User {
+    username: String!
+    role: String!
+    id: ID!
+  }
+
+  type Token {
+    value: String!
+  }
+
   type Query {
     foodCount: Int!
     allFoods: [Food]!
     allCategories: [String]!
+    foodsByCategory(category: String!): [Food]!
   }
 
   type Mutation {
     addFood(
       name: String!
+      price: Float!
       category: String!
       diet: [String]
       ingredients: [String]
@@ -49,6 +64,17 @@ const typeDefs = gql`
       name: String!
       rating: Int!
     ): Food
+
+    createUser(
+      username: String!
+      password: String!
+      role: String!
+    ): User
+
+    login(
+      username: String!
+      password: String!
+    ): Token
   }
 
 `
@@ -62,6 +88,10 @@ const resolvers = {
       const foods = await Food.find({})
       const uniqs = _.uniq(foods.map(food => food.category))
       return uniqs
+    },
+    foodsByCategory: async (root, args) => {
+      const foods = await Food.find({category: args.category})
+      return foods
     }
   },
   Mutation: {
@@ -75,11 +105,26 @@ const resolvers = {
       const newFood = new Food({...args, ratings: []})
       return newFood.save()
     },
+
     rateFood: async (root, args) => {
       const food = await Food.findOne({name: args.name})
       food.ratings.push(args.rating)
       return food.save()
-    }
+    },
+
+    createUser: async (root, args) => {
+      const passwordHash = await bcrypt.hash(args.password, 10)
+
+      const newUser = new User({
+        username: args.username,
+        role: args.role,
+        passwordHash,
+      })
+
+      return newUser.save()
+    },
+
+    
   }
 }
 
