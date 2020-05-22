@@ -25,6 +25,13 @@ mongoose.connect(config.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology:
     logger.error(`error connecting to MongoDB: ${e.message}`)
   })
   
+const USER_ROLES = {
+  owner: 5,
+  coOwner: 4,
+  chef: 3,
+  waiter: 2,
+}
+
 
 const typeDefs = gql`
   type Food {
@@ -38,7 +45,7 @@ const typeDefs = gql`
 
   type User {
     username: String!
-    role: String!
+    role: Int!
     id: ID!
   }
 
@@ -71,7 +78,7 @@ const typeDefs = gql`
     createUser(
       username: String!
       password: String!
-      role: String!
+      role: Int!
     ): User
 
     login(
@@ -101,7 +108,11 @@ const resolvers = {
     }
   },
   Mutation: {
-    addFood: (root, args) => {
+    addFood: (root, args, context) => {
+      if (!context.currentUser || context.currentUser.role < USER_ROLES.chef){
+        throw new AuthenticationError('Unauthorized')
+      }
+
       if (!args.diet) {
         args = {...args, diet: []}
       }
@@ -118,7 +129,11 @@ const resolvers = {
       return food.save()
     },
 
-    createUser: async (root, args) => {
+    createUser: async (root, args, context) => {
+      if (!context.currentUser || context.currentUser.role !== USER_ROLES.owner){
+        throw new AuthenticationError('Unauthorized')
+      }
+
       const passwordHash = await bcrypt.hash(args.password, 10)
 
       const newUser = new User({

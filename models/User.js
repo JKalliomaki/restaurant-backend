@@ -1,5 +1,12 @@
 const mongoose = require('mongoose')
 
+/* Role meanings:
+* 5: owner
+* 4: co-owner
+* 3: chef
+* 2: waiter
+*/
+
 const schema = new mongoose.Schema({
   username: {
     type: String,
@@ -12,7 +19,7 @@ const schema = new mongoose.Schema({
     required: true
   },
   role: {
-    type: String,
+    type: Number,
     required: true
   }
 })
