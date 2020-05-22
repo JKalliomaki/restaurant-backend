@@ -31,6 +31,7 @@ const USER_ROLES = {
   chef: 3,
   waiter: 2,
 }
+Object.freeze(USER_ROLES)
 
 
 const typeDefs = gql`
