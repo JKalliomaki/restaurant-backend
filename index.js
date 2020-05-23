@@ -71,6 +71,14 @@ const typeDefs = gql`
       ingredients: [String]
     ): Food
 
+    editFood(
+      name: String!
+      price: Float!
+      category: String!
+      diet: [String]
+      ingredients: [String]
+    ): Food
+
     rateFood(
       name: String!
       rating: Int!
@@ -122,6 +130,15 @@ const resolvers = {
       }
       const newFood = new Food({...args, ratings: []})
       return newFood.save()
+    },
+    editFood: async (root, args, context) => {
+      if (!context.currentUser || context.currentUser.role < USER_ROLES.chef){
+        throw new AuthenticationError('Unauthorized')
+      }
+      const editedFood = {
+        ...args
+      }
+      return await Food.findOneAndUpdate({name: args.name}, editedFood, {new: true})
     },
 
     rateFood: async (root, args) => {
