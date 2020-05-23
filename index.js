@@ -79,6 +79,10 @@ const typeDefs = gql`
       ingredients: [String]
     ): Food
 
+    removeFood(
+      name: String!
+    ): Food
+
     rateFood(
       name: String!
       rating: Int!
@@ -139,6 +143,13 @@ const resolvers = {
         ...args
       }
       return await Food.findOneAndUpdate({name: args.name}, editedFood, {new: true})
+    },
+
+    removeFood: async (root, args, context) => {
+      if (!context.currentUser || context.currentUser.role < USER_ROLES.chef){
+        throw new AuthenticationError('Unauthorized')
+      }
+      return await Food.findOneAndRemove({name: args.name})
     },
 
     rateFood: async (root, args) => {
