@@ -1,10 +1,13 @@
 const mongoose = require('mongoose')
+const uniqueValidator = require('mongoose-unique-validator')
+
 
 /* Role meanings:
 * 5: owner
 * 4: co-owner
 * 3: chef
 * 2: waiter
+* 1: customer
 */
 
 const schema = new mongoose.Schema({
@@ -23,5 +26,8 @@ const schema = new mongoose.Schema({
     required: true
   }
 })
+
+schema.plugin(uniqueValidator)
+
 
 module.exports = mongoose.model('User', schema)

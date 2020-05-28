@@ -9,6 +9,7 @@ const _ = require('lodash')
 
 const Food = require('./models/Food')
 const User = require('./models/User')
+const Order = require('./models/Order')
 const config = require('./utils/config')
 const logger = require('./utils/logger')
 const bcrypt = require('bcrypt')
@@ -17,7 +18,11 @@ const jwt = require('jsonwebtoken')
 mongoose.set('useFindAndModify', false)
 
 logger.info('Connecting to MongoDB')
-mongoose.connect(config.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true})
+mongoose.connect(config.MONGODB_URI, {
+  useNewUrlParser: true, 
+  useUnifiedTopology: true,
+  useCreateIndex: true
+})
   .then(() => {
     logger.info('connected to MongoDB')
   })
@@ -54,11 +59,18 @@ const typeDefs = gql`
     value: String!
   }
 
+  type Order {
+    orderer: String!
+    phoneNr: String!
+    items: [Food]!
+  }
+
   type Query {
     foodCount: Int!
     allFoods: [Food]!
     allCategories: [String]!
     foodsByCategory(category: String!): [Food]!
+    allOrders: [Order]!
     me: User
   }
 
@@ -88,6 +100,12 @@ const typeDefs = gql`
       rating: Int!
     ): Food
 
+    createOrder(
+      orderer: String!
+      phoneNr: String!
+      items: [String!]!
+    ): Order
+
     createUser(
       username: String!
       password: String!
@@ -115,6 +133,11 @@ const resolvers = {
     foodsByCategory: async (root, args) => {
       const foods = await Food.find({category: args.category})
       return foods
+    },
+    allOrders: async () => {
+      const orders = await Order.find({})
+        .populate('items')
+      return orders
     },
     me: (root, args, context) => {
       return context.currentUser
@@ -156,6 +179,21 @@ const resolvers = {
       const food = await Food.findOne({name: args.name})
       food.ratings.push(args.rating)
       return food.save()
+    },
+
+    createOrder: async (root, args) => {
+      let items = []
+      for (const item of args.items){
+        const foodToAdd = await Food.findOne({name: item})
+        if(foodToAdd){
+          console.log(foodToAdd.name)
+          items.push(foodToAdd._id)
+        }
+      }
+
+      console.log(items)
+      const order = await new Order({...args, items: items})
+      return await order.save()
     },
 
     createUser: async (root, args, context) => {
