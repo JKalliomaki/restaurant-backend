@@ -15,6 +15,12 @@ const logger = require('./utils/logger')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
+const FOOD_CATEGORIES = [
+  'starter',
+  'main course',
+  'dessert'
+]
+
 mongoose.set('useFindAndModify', false)
 
 logger.info('Connecting to MongoDB')
@@ -62,7 +68,8 @@ const typeDefs = gql`
   type Order {
     orderer: String!
     phoneNr: String!
-    items: [Food]!
+    items: [String]!
+    id: ID!
   }
 
   type Query {
@@ -106,6 +113,10 @@ const typeDefs = gql`
       items: [String!]!
     ): Order
 
+    removeOrder(
+      id: ID!
+    ): Order
+
     createUser(
       username: String!
       password: String!
@@ -125,10 +136,8 @@ const resolvers = {
   Query: {
     foodCount: () => Food.collection.countDocuments(),
     allFoods: () => Food.find({}),
-    allCategories: async () => {
-      const foods = await Food.find({})
-      const uniqs = _.uniq(foods.map(food => food.category))
-      return uniqs
+    allCategories: () => {
+      return FOOD_CATEGORIES
     },
     foodsByCategory: async (root, args) => {
       const foods = await Food.find({category: args.category})
@@ -136,7 +145,6 @@ const resolvers = {
     },
     allOrders: async () => {
       const orders = await Order.find({})
-        .populate('items')
       return orders
     },
     me: (root, args, context) => {
@@ -187,13 +195,17 @@ const resolvers = {
         const foodToAdd = await Food.findOne({name: item})
         if(foodToAdd){
           console.log(foodToAdd.name)
-          items.push(foodToAdd._id)
+          items.push(foodToAdd.name)
         }
       }
 
-      console.log(items)
       const order = await new Order({...args, items: items})
+      console.log(order)
       return await order.save()
+    },
+
+    removeOrder: async (root, args) => {
+      return await Order.findByIdAndRemove(args.id)
     },
 
     createUser: async (root, args, context) => {

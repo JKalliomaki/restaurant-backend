@@ -11,8 +11,7 @@ const schema = new mongoose.Schema({
   },
   items: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Food'
+      type: String
     }
   ]
 })
