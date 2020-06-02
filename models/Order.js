@@ -9,6 +9,10 @@ const schema = new mongoose.Schema({
     type: String,
     required: true
   },
+  tableNr: {
+    type: Number,
+    required: true,
+  },
   items: [
     {
       type: String

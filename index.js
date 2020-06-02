@@ -68,6 +68,7 @@ const typeDefs = gql`
   type Order {
     orderer: String!
     phoneNr: String!
+    tableNr: Int!
     items: [String]!
     id: ID!
   }
@@ -110,6 +111,7 @@ const typeDefs = gql`
     createOrder(
       orderer: String!
       phoneNr: String!
+      tableNr: Int!
       items: [String!]!
     ): Order
 
