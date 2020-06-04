@@ -108,7 +108,6 @@ const typeDefs = gql`
     ): Food
 
     createOrder(
-      waiter: ID!
       tableNr: Int!
       items: [String!]!
     ): Order
@@ -190,7 +189,11 @@ const resolvers = {
       return food.save()
     },
 
-    createOrder: async (root, args) => {
+    createOrder: async (root, args, context) => {
+      if (!context.currentUser){
+        throw new AuthenticationError('Unauthorized')
+      }
+      const userId = context.currentUser._id
       let items = []
       for (const item of args.items){
         const foodToAdd = await Food.findOne({name: item})
@@ -200,7 +203,7 @@ const resolvers = {
         }
       }
 
-      let order = await new Order({...args, items: items})
+      let order = await new Order({...args, waiter: userId, items: items})
       order = await order.populate('waiter').execPopulate()
       console.log(order)
       return await order.save()
