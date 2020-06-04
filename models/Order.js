@@ -1,12 +1,9 @@
 const mongoose = require('mongoose')
 
 const schema = new mongoose.Schema({
-  orderer: {
-    type: String,
-    required: true
-  },
-  phoneNr: {
-    type: String,
+  waiter: {
+    type: mongoose.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   tableNr: {

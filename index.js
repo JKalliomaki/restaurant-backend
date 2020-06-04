@@ -66,8 +66,7 @@ const typeDefs = gql`
   }
 
   type Order {
-    orderer: String!
-    phoneNr: String!
+    waiter: User!
     tableNr: Int!
     items: [String]!
     id: ID!
@@ -109,8 +108,7 @@ const typeDefs = gql`
     ): Food
 
     createOrder(
-      orderer: String!
-      phoneNr: String!
+      waiter: ID!
       tableNr: Int!
       items: [String!]!
     ): Order
@@ -147,6 +145,7 @@ const resolvers = {
     },
     allOrders: async () => {
       const orders = await Order.find({})
+        .populate('waiter')
       return orders
     },
     me: (root, args, context) => {
@@ -201,7 +200,8 @@ const resolvers = {
         }
       }
 
-      const order = await new Order({...args, items: items})
+      let order = await new Order({...args, items: items})
+      order = await order.populate('waiter').execPopulate()
       console.log(order)
       return await order.save()
     },
