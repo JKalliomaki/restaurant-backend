@@ -2,7 +2,24 @@ const {
   ApolloServer,
   gql,
   AuthenticationError,
-  } = require('apollo-server')
+} = require('apollo-server')
+
+const path = require('path')
+const bodyParser = require('body-parser')
+
+const { makeExecutableSchema } = require('graphql-tools')
+
+const graphqlHTTP = require('express-graphql')
+const express = require('express')
+const app = express()
+app.use(express.json())
+app.use(express.static('build'))
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }))
+
+const expressPlayground = require('graphql-playground-middleware-express')
+  .default
+
 
 const mongoose = require('mongoose')
 const _ = require('lodash')
@@ -193,12 +210,11 @@ const resolvers = {
       if (!context.currentUser){
         throw new AuthenticationError('Unauthorized')
       }
-      const userId = context.currentUser._id
+      const userId = context.currentUser.id
       let items = []
       for (const item of args.items){
         const foodToAdd = await Food.findOne({name: item})
         if(foodToAdd){
-          console.log(foodToAdd.name)
           items.push(foodToAdd.name)
         }
       }
@@ -253,22 +269,59 @@ const resolvers = {
   }
 }
 
+const contextFunc = async (req) => {
+  const auth = req ? req.headers.authorization : null
+  if (auth && auth.toLowerCase().startsWith('bearer ')){
+    const decodedToken = jwt.verify(
+      auth.substring(7), config.JWT_SECRET
+    )
+    const currentUser = await User
+      .findById(decodedToken.id)
+    return {
+      username: currentUser.username,
+      role: currentUser.role,
+      id: currentUser.id,
+    }
+  }
+}
+
+/*
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: async ({req}) => {
-    const auth = req ? req.headers.authorization : null
-    if (auth && auth.toLowerCase().startsWith('bearer ')){
-      const decodedToken = jwt.verify(
-        auth.substring(7), config.JWT_SECRET
-      )
-      const currentUser = await User
-        .findById(decodedToken.id)
-      return {currentUser}
-    }
-  }
+  context,
 })
 
 server.listen().then(({ url }) => {
   console.log(`Server ready at ${url}`)
 })
+
+*/
+
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers,
+  playground: true,
+})
+
+app.use('/graphql', graphqlHTTP(async (req) => {
+  const context = await contextFunc(req)
+  console.log(context)
+  const returnObject = {
+    schema,
+    graphiql: true,
+    context: {
+      currentUser: context
+    }
+  }
+  return {...returnObject}
+}))
+  
+
+app.get('/playground', expressPlayground({endpoint: '/graphql'}))
+app.get('*', (req, res) => res.sendFile(path.join(__dirname+'/build/index.html')))
+
+const port = process.env.PORT || '4000'
+
+app.listen(port)
+console.log(`server ready at port ${port}`)
