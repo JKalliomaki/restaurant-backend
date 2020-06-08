@@ -221,7 +221,7 @@ const resolvers = {
 
       let order = await new Order({...args, waiter: userId, items: items})
       order = await order.populate('waiter').execPopulate()
-      console.log(order)
+      logger.info(order)
       return await order.save()
     },
 
@@ -285,19 +285,6 @@ const contextFunc = async (req) => {
   }
 }
 
-/*
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context,
-})
-
-server.listen().then(({ url }) => {
-  console.log(`Server ready at ${url}`)
-})
-
-*/
-
 const schema = makeExecutableSchema({
   typeDefs,
   resolvers,
@@ -306,7 +293,6 @@ const schema = makeExecutableSchema({
 
 app.use('/graphql', graphqlHTTP(async (req) => {
   const context = await contextFunc(req)
-  console.log(context)
   const returnObject = {
     schema,
     graphiql: true,
