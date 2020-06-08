@@ -307,7 +307,7 @@ app.use('/graphql', graphqlHTTP(async (req) => {
 app.get('/playground', expressPlayground({endpoint: '/graphql'}))
 app.get('*', (req, res) => res.sendFile(path.join(__dirname+'/build/index.html')))
 
-const port = process.env.PORT || '4000'
+const PORT = process.env.PORT || 4000
 
-app.listen(port)
-console.log(`server ready at port ${port}`)
+app.listen(PORT)
+console.log(`server ready at port ${PORT}`)
